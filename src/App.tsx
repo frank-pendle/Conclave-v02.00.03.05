@@ -98,7 +98,7 @@ const INITIAL_AGENTS: Agent[] = [
   },
   {
     id: 'tholons-agent',
-    name: 'Thomas (Tholons)',
+    name: 'Beppo (BPO)',
     role: 'Global Business Strategy',
     description: 'Strategic, focuses on global operations, outsourcing, digital transformation, and macro-economic business trends.',
     icon: Briefcase,
@@ -107,7 +107,7 @@ const INITIAL_AGENTS: Agent[] = [
   },
   {
     id: 'deloitte-si',
-    name: 'David (Deloitte SI)',
+    name: 'Simone (SI)',
     role: 'Systems Integrator',
     description: 'Process-oriented, focuses on enterprise architecture, risk mitigation, compliance, and scalable technical implementation.',
     icon: Building2,
@@ -394,23 +394,38 @@ export default function App() {
     let agentsToRespond = [...arenaAgents];
     
     if (lastUserMsg) {
-      const mentionedAgents = arenaAgents.filter(agent => 
-        lastUserMsg.text.toLowerCase().includes(agent.name.toLowerCase()) ||
-        lastUserMsg.text.toLowerCase().includes(agent.role.toLowerCase())
-      );
+      const text = lastUserMsg.text.toLowerCase();
       
-      const groupKeywords = ['everyone', 'all', 'team', 'group', 'conclave', 'anybody', 'somebody', 'any of you'];
-      const isGroupAsk = groupKeywords.some(k => lastUserMsg.text.toLowerCase().includes(k));
+      // Look for explicit @ mentions (e.g., @Sarah)
+      const explicitMentions = arenaAgents.filter(agent => {
+        // Split name into parts to catch "Sarah" from "Sarah (Sales)"
+        const nameParts = agent.name.toLowerCase().split(/[\s()]+/);
+        return nameParts.some(part => part.length > 2 && text.includes(`@${part}`));
+      });
 
-      if (mentionedAgents.length > 0 && !isGroupAsk) {
-        // ONLY mentioned agents respond
-        agentsToRespond = mentionedAgents;
-      } else if (mentionedAgents.length > 0 && isGroupAsk) {
-        // Everyone responds, but mentioned ones go first
-        const otherAgents = arenaAgents.filter(agent => !mentionedAgents.includes(agent));
-        agentsToRespond = [...mentionedAgents, ...otherAgents];
+      if (explicitMentions.length > 0) {
+        // If there are @ mentions, ONLY those agents respond
+        agentsToRespond = explicitMentions;
+      } else {
+        // Fallback to general mentions and group asks
+        const mentionedAgents = arenaAgents.filter(agent => 
+          text.includes(agent.name.toLowerCase()) ||
+          text.includes(agent.role.toLowerCase())
+        );
+        
+        const groupKeywords = ['everyone', 'all', 'team', 'group', 'conclave', 'anybody', 'somebody', 'any of you'];
+        const isGroupAsk = groupKeywords.some(k => text.includes(k));
+
+        if (mentionedAgents.length > 0 && !isGroupAsk) {
+          // ONLY mentioned agents respond
+          agentsToRespond = mentionedAgents;
+        } else if (mentionedAgents.length > 0 && isGroupAsk) {
+          // Everyone responds, but mentioned ones go first
+          const otherAgents = arenaAgents.filter(agent => !mentionedAgents.includes(agent));
+          agentsToRespond = [...mentionedAgents, ...otherAgents];
+        }
+        // If no mentions and no group ask, default to everyone (current behavior)
       }
-      // If no mentions and no group ask, default to everyone (current behavior)
     }
     
     // If starting fresh with no messages, add the task as the first message
