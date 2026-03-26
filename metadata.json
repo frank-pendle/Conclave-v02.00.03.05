@@ -1,0 +1,5 @@
+{
+  "name": "Agent Arena",
+  "description": "A virtual workspace to drag and drop AI agents with different personas to collaborate on tasks.",
+  "requestFramePermissions": []
+}
